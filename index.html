@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Flynn Home Page</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="favicon.svg">
+<meta name="theme-color" content="#7c3aed">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="blobs" aria-hidden="true"><i></i><i></i><i></i></div>
+<canvas id="bg"></canvas>
+
+<main class="page">
+
+  <header class="top">
+    <div class="rise d1">
+      <div class="greet">
+        <i class="fa-solid fa-hand wave" aria-hidden="true"></i>
+        <span class="g-line"><span id="greeting"></span><b id="name" title="Click to change name"></b></span>
+      </div>
+      <div class="clock" id="clock">--:--</div>
+      <div class="date" id="date"></div>
+    </div>
+    <div class="weather rise d2" id="weather" title="Click to change location">
+      <div class="progress indeterminate" id="wLoad"><i></i></div>
+      <div id="wBody" style="display:none">
+        <div class="w-main"><i class="w-ico fa-solid fa-cloud-sun" id="wIco"></i><span class="w-temp" id="wTemp"></span></div>
+        <div class="w-desc" id="wDesc"></div>
+        <div class="w-city"><i class="fa-solid fa-location-dot fa-fw"></i> <span id="wCity"></span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="mid">
+  <section class="hero rise d3">
+    <div class="day">
+      <div class="dp" id="dayCard" style="--p:0%">
+        <span class="cloud c1"></span><span class="cloud c2"></span>
+        <div class="dp-card">
+          <div class="dp-veil"></div><div class="dp-edge"></div>
+          <i class="bub b1"></i><i class="bub b2"></i><i class="bub b3"></i><i class="bub b4"></i>
+          <div class="dp-face" id="dpFace"></div>
+          <div class="dp-txt"><b>Today</b><span id="dpLeft"></span></div>
+          <div class="dp-pct" id="dayPct">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="search">
+      <form class="search-box" id="searchForm">
+        <span class="s-ico" id="sIco" aria-hidden="true"></span>
+        <input id="q" type="text" placeholder="Ask Google or type a URL" autocomplete="off" autofocus>
+        <div class="s-tools">
+          <button class="s-act" id="mic" type="button" title="Search by voice"><i class="fa-solid fa-microphone"></i></button>
+          <button class="s-act" id="lens" type="button" title="Search with Google Lens"><i class="fa-solid fa-camera"></i></button>
+          <button class="ai" id="aiMode" type="button" title="Google AI Mode"><i class="fa-solid fa-wand-magic-sparkles"></i><span>AI Mode</span></button>
+        </div>
+      </form>
+      <div class="engines" id="engines"></div>
+    </div>
+  </section>
+
+  <section class="dock rise d4">
+    <div class="panel active" id="p-links">
+      <div class="toolbar">
+        <button class="icon-btn" id="addLink"><i class="fa-solid fa-plus"></i> Add</button>
+        <button class="icon-btn" id="editLinks"><i class="fa-solid fa-pen"></i> <span>Edit</span></button>
+      </div>
+      <div class="links" id="linkGrid"></div>
+    </div>
+  </section>
+  </div>
+
+  <footer class="foot rise d5">Press <b>/</b> to search &nbsp;·&nbsp; <b>,</b> for settings</footer>
+</main>
+
+<button id="gear" class="gear" aria-label="Open settings" title="Settings (,)"><i class="fa-solid fa-gear"></i></button>
+<div id="scrim"></div>
+<aside id="drawer" aria-label="Settings">
+  <div class="d-head"><b><i class="fa-solid fa-sliders"></i> Settings</b><button id="dClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+  <nav id="dTabs" class="d-tabs"></nav>
+  <div id="dBody"></div>
+</aside>
+<div id="toasts"></div>
+<script src="script.js"></script>
+</body>
+</html>
