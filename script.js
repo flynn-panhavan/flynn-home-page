@@ -259,6 +259,18 @@
   $('#gear').onclick = () => openDrawer(true);
   $('#scrim').onclick = $('#dClose').onclick = () => openDrawer(false);
 
+  /* install-as-app support */
+  let installEv = null;
+  const isInstalled = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEv = e; if (document.body.classList.contains('open')) render(); });
+  window.addEventListener('appinstalled', () => { installEv = null; toast('App installed', 'fa-circle-check'); if (document.body.classList.contains('open')) render(); });
+  async function installApp() {
+    if (!installEv) return;
+    installEv.prompt();
+    try { await installEv.userChoice; } catch (e) {}
+    installEv = null; render();
+  }
+
   const SCHEMA = [
     ['theme', 'Theme', 'fa-palette', [
       { t: 'h', l: 'Color theme', d: 'Pick a background palette for your home page.' },
@@ -325,6 +337,8 @@
     ['data', 'Data', 'fa-database', [
       { t: 'h', l: 'Profile', d: 'Your name and weather location.' },
       { t: 'acts', l: 'Profile', kw: 'name location', a: 'profile' },
+      { t: 'h', l: 'App', d: 'Install Flynn like a normal app. It also opens without internet.' },
+      { t: 'acts', l: 'Install app', kw: 'pwa offline desktop phone home screen', a: 'install' },
       { t: 'h', l: 'Backup', d: 'Everything is stored in this browser only.' },
       { t: 'acts', l: 'Backup and restore', kw: 'export import json', a: 'backup' },
       { t: 'h', l: 'Reset' },
@@ -448,8 +462,14 @@
       const sets = {
         profile: [['Change name', 'fa-user', () => nameEl.click()], ['Change location', 'fa-location-dot', () => $('#weather').click()]],
         backup: [['Export backup', 'fa-download', exportData], ['Import backup', 'fa-upload', importData]],
-        reset: [['Reset all settings', 'fa-rotate-left', resetAll, true]]
+        reset: [['Reset all settings', 'fa-rotate-left', resetAll, true]],
+        install: installEv ? [['Install app', 'fa-download', installApp]] : []
       }[f.a];
+      if (f.a === 'install' && !sets.length) {
+        row.appendChild(el('<small class="note">' + (isInstalled()
+          ? '<i class="fa-solid fa-circle-check" style="color:#22c55e"></i> Flynn is installed and running as an app.'
+          : 'Install is not offered by this browser right now. In Chrome or Edge use the install icon in the address bar or the menu. On iPhone use Share, then Add to Home Screen.') + '</small>'));
+      }
       sets.forEach(([n, ico, fn, danger]) => {
         const b = el('<button type="button"' + (danger ? ' class="danger"' : '') + '><i class="fa-solid ' + ico + '"></i>' + n + '</button>'); b.onclick = fn; row.appendChild(b);
       });
@@ -806,3 +826,8 @@
     store.set('loc', loc); loadWeather(); toast('Location set to ' + x.n, 'fa-location-dot');
   };
 })();
+
+/* offline support (needs https, which Vercel provides) */
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
