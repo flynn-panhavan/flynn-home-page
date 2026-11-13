@@ -8,6 +8,7 @@ Built with plain HTML, CSS and JavaScript: no build step, no framework, no API k
 
 - [Features](#features)
 - [Theme in use](#theme-in-use)
+- [Particle network](#particle-network)
 - [Settings reference](#settings-reference)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Install as an app and offline use](#install-as-an-app-and-offline-use)
@@ -30,9 +31,16 @@ Built with plain HTML, CSS and JavaScript: no build step, no framework, no API k
 - **Weather** from [Open-Meteo](https://open-meteo.com/) for 25 locations: Phnom Penh and all 24 provinces of Cambodia, searchable in English and Khmer, in °C or °F.
 - **Shortcuts** with automatic site icons. Add, preview and remove them from a validated dialog.
 
+**Google bar** (top right, like the Google home page)
+
+- **Gmail** and **Images** links, a **Google apps** menu with 18 services (Account, Search, Maps, YouTube, Gmail, Drive, Calendar, Meet, Photos, Docs, Sheets, Slides, Translate, News, Keep, Contacts, Gemini, Play) and a **profile** button.
+- The profile card shows your name, photo and optional email, with links to **Manage your Google Account** and **Switch account**.
+- A web page cannot read your Google photo automatically, so you upload it once in **Edit profile**. It is resized and stored on your device only.
+
 **Search**
 
 - Google, YouTube, GitHub, Maps and DuckDuckGo, plus voice search, Google Lens and AI Mode.
+- **Suggestions** appear as you type (Google, with DuckDuckGo as backup), and **search history** appears when you click the empty search bar. Use the arrow keys to move through the list and press Enter to search. Remove a single history item with its ✕ button.
 - Typing a URL opens it directly.
 - Choose the default engine, hide the engine chips, and open results in the same tab or a new tab.
 
@@ -58,7 +66,7 @@ Built with plain HTML, CSS and JavaScript: no build step, no framework, no API k
 | Color theme | **Aurora** |
 | Appearance | Auto (follows your device light or dark setting) |
 | Day-bar color | Aqua |
-| Glow, particles, glass blur | On, On, 16 px |
+| Glow, particles, glass blur | On, On, 16 px (see [Particle network](#particle-network)) |
 
 Aurora colors:
 
@@ -92,6 +100,30 @@ To switch back to it at any time: **Settings → Theme → Color theme → Auror
 | Candy | `#f9a8d4` `#f472b6` `#c084fc` `#818cf8` |
 | Mono | `#9ca3af` `#6b7280` `#4b5563` `#374151` |
 
+## Particle network
+
+An animated background layer of drifting dots. Nearby dots are joined by thin lines, and dots move away from your cursor. It is drawn on a canvas behind the page, uses the colors of the active theme, and can be switched off completely.
+
+Open **Settings → Particles** to change it.
+
+| Setting | What it does | Range | Default | In use |
+| --- | --- | --- | --- | --- |
+| Enable particles | Turns the whole effect on or off | On / Off | On | On |
+| Amount | Number of dots | 10 to 250 | 80 | **110** |
+| Dot size | Size of each dot | 40% to 400% | 100% | **120%** |
+| Speed | How fast the dots drift (0% freezes them) | 0% to 400% | 100% | **120%** |
+| Connecting lines | Draw lines between nearby dots | On / Off | On | On |
+| Line distance | How close two dots must be to join | 40 to 250 px | 100 px | **120 px** |
+| Dots move away from cursor | Dots avoid the mouse pointer | On / Off | On | On |
+
+The "In use" column records the values currently chosen for this page. Every option except **Enable particles** dims when the effect is off, and **Reset this section** returns all of them to the defaults.
+
+Tips:
+
+- For a calm, minimal look, lower **Amount** and **Speed**, or turn off **Connecting lines**.
+- On older phones and laptops, a smaller **Amount** or turning particles off reduces CPU and battery use.
+- The defaults live in `DEF` in `script.js` (`particles`, `pCount`, `pSize`, `pSpeed`, `pLines`, `pLink`, `pMouse`).
+
 ## Settings reference
 
 Open Settings with the gear button or the `,` key.
@@ -99,12 +131,12 @@ Open Settings with the gear button or the `,` key.
 | Section | Options |
 | --- | --- |
 | **Theme** | Color theme, appearance (auto, light, dark), custom background colors, animated glow, glass blur |
-| **Search** | Show engine chips, show Voice / Lens / AI Mode buttons, default search engine, open results in same tab or new tab |
-| **Display** | 24-hour clock, show seconds, weather card, temperature unit, open shortcuts in a new tab |
+| **Search** | Show engine chips, show Voice / Lens / AI Mode buttons, search suggestions on or off, save history, searches to keep, clear history, default search engine, open results in same tab or new tab |
+| **Display** | 24-hour clock, show seconds, weather card, temperature unit, open shortcuts and Google bar links in a new tab, show Google bar |
 | **Particles** | Enable, amount, dot size, speed, connecting lines, line distance, dots move away from cursor |
 | **Size** | Interface size, clock size |
 | **Day bar** | Show bar, color, height, width, corner roundness, percentage size, dim passed time, percentage, text, face, clouds, bubbles |
-| **Data** | Change name and location, install app, export and import backup, reset all settings |
+| **Data** | Edit profile and photo, change location, install app, export and import backup, reset all settings |
 
 ## Keyboard shortcuts
 
@@ -214,13 +246,17 @@ The page makes requests to these services from the visitor's browser:
 | [Open-Meteo](https://open-meteo.com/) | Current temperature and conditions (no API key) |
 | Google Fonts | Inter typeface |
 | cdnjs (Font Awesome 6.5.2) | Icons |
-| Google favicon service | Shortcut and search-engine icons |
+| Google favicon service | Shortcut, search-engine and Google app icons |
+| Google suggest (`suggestqueries.google.com`) | Search suggestions while you type (can be turned off) |
+| DuckDuckGo (`duckduckgo.com/ac`) | Backup source for search suggestions |
 
 Fonts, icons and shortcut icons are saved by the service worker after the first visit, so they also show offline. If weather is unreachable, it shows "Weather unavailable". If a shortcut icon is unreachable, a generic globe is used.
 
 ## Data and privacy
 
-Settings, name, shortcuts, location and search engine are saved only in the browser's `localStorage`. Clearing site data resets the page. Use **Settings → Data → Export backup** to save a copy and **Import backup** to restore it on another browser or device.
+Settings, name, profile photo and email, shortcuts, location, search engine and search history are saved only in the browser's `localStorage`. Clearing site data resets the page.
+
+**Search suggestions send what you type** to Google (or DuckDuckGo) so they can suggest completions. Turn this off in **Settings → Search → Show search suggestions**. Search history is never sent anywhere. Clear it in the same section. Use **Settings → Data → Export backup** to save a copy and **Import backup** to restore it on another browser or device.
 
 ## Browser support
 
@@ -234,6 +270,7 @@ Current versions of Chrome, Edge, Firefox and Safari. Voice search needs a brows
 | Changes do not appear | Wait a minute for deployment, then hard refresh (`Ctrl+Shift+R` or `Cmd+Shift+R`). Close and reopen an installed app once. |
 | No install button | The page must be on https and not already installed. Use the browser menu or address-bar icon instead. |
 | Offline does not work | Visit the site once while online and reload, then check **DevTools → Application → Service Workers**. |
+| No search suggestions | They need internet and can be blocked by ad blockers or privacy extensions. History still works. Check **Settings → Search → Show search suggestions**. |
 | Weather shows "unavailable" | Check your connection or any ad blocker that may block `api.open-meteo.com`. |
 | Settings disappeared | Site data was cleared or you are in a private window. Restore from a backup file. |
 

@@ -197,7 +197,7 @@
 
 
   /* ---------- settings ---------- */
-  const DEF = { theme: 'aurora', mode: 'auto', custom: ['#4f46e5', '#06b6d4', '#ec4899', '#0b1020'], tab: 'theme', blobs: true, particles: true, pCount: 80, pSize: 100, pSpeed: 100, pLink: 100, pLines: true, pMouse: true, blur: 16, scale: 110, clock: 100, hr24: false, seconds: false, unit: 'C', weather: true, dayBar: true, engines: true, newTab: false, sNew: false, sTools: true,
+  const DEF = { theme: 'aurora', mode: 'auto', custom: ['#4f46e5', '#06b6d4', '#ec4899', '#0b1020'], tab: 'theme', blobs: true, particles: true, pCount: 80, pSize: 100, pSpeed: 100, pLink: 100, pLines: true, pMouse: true, blur: 16, scale: 110, clock: 100, hr24: false, seconds: false, unit: 'C', weather: true, dayBar: true, engines: true, newTab: false, sNew: false, sTools: true, gBar: true, sug: true, histOn: true, histMax: 20,
     dpH: 116, dpW: 100, dpR: 16, dpPct: 100, dpDim: 50, dpTxt: true, dpPctOn: true, dpFace: true, dpClouds: true, dpBubbles: true, dpGrad: 'aqua' };
   const saved = store.get('settings', {});
   const S = Object.assign({}, DEF, saved);
@@ -232,7 +232,7 @@
     pc = d ? '255,200,230' : '50,50,90';
     const b = document.body.classList;
     b.toggle('no-blobs', !S.blobs); b.toggle('hide-weather', !S.weather);
-    b.toggle('hide-day', !S.dayBar); b.toggle('hide-engines', !S.engines);
+    b.toggle('hide-day', !S.dayBar); b.toggle('hide-engines', !S.engines); b.toggle('hide-gbar', !S.gBar);
     r.style.setProperty('--dp-h', S.dpH + 'px');
     r.style.setProperty('--dp-w', S.dpW + '%');
     r.style.setProperty('--dp-r', S.dpR + 'px');
@@ -243,6 +243,7 @@
     b.toggle('no-dptxt', !S.dpTxt); b.toggle('no-dppct', !S.dpPctOn); b.toggle('no-dpface', !S.dpFace);
     b.toggle('no-dpclouds', !S.dpClouds); b.toggle('no-dpbubs', !S.dpBubbles);
     b.toggle('hide-tools', !S.sTools);
+    applyGTargets();
     $('#bg').style.display = S.particles ? 'block' : 'none';
   }
   apply();
@@ -286,6 +287,11 @@
       { t: 'h', l: 'Search bar', d: 'Choose what appears around the search box.' },
       { k: 'engines', t: 'sw', l: 'Show search engine chips', d: 'Turn off to hide the engine picker below the search bar.', kw: 'hide engines google youtube github duckduckgo maps' },
       { k: 'sTools', t: 'sw', l: 'Voice, Lens & AI Mode buttons', d: 'Show these shortcut buttons inside the search bar.', kw: 'microphone camera' },
+      { t: 'h', l: 'Suggestions and history', d: 'Help while you type in the search bar.' },
+      { k: 'sug', t: 'sw', l: 'Show search suggestions', d: 'Sends what you type to Google (or DuckDuckGo) to get ideas. Turn off for full privacy.', kw: 'autocomplete autosuggest online' },
+      { k: 'histOn', t: 'sw', l: 'Save search history', d: 'Kept on this device only and shown when you click the search bar.', kw: 'recent past searches' },
+      { k: 'histMax', t: 'rng', l: 'Searches to keep', dep: 'histOn', min: 5, max: 50, step: 5, u: '' },
+      { t: 'acts', l: 'Clear search history', kw: 'delete remove history', a: 'clearHist' },
       { t: 'h', l: 'Default engine', d: 'Used when you press Enter in the search bar.' },
       { t: 'engsel', l: 'Default search engine', kw: 'google youtube github duckduckgo maps' },
       { t: 'h', l: 'Results', d: 'Where a search opens after you press Enter.' },
@@ -299,7 +305,9 @@
       { k: 'weather', t: 'sw', l: 'Weather card', d: 'Show current conditions for your chosen location.' },
       { k: 'unit', t: 'seg', l: 'Temperature unit', dep: 'weather', o: [['C', '°C'], ['F', '°F']] },
       { t: 'h', l: 'Shortcuts' },
-      { k: 'newTab', t: 'sw', l: 'Open shortcuts in a new tab', d: 'Applies to the pinned website shortcuts only.', kw: 'links blank window' }
+      { k: 'newTab', t: 'sw', l: 'Open shortcuts in a new tab', d: 'Applies to the pinned shortcuts and the Google bar links.', kw: 'links blank window' },
+      { t: 'h', l: 'Google bar', d: 'Gmail, Images, Google apps and your profile at the top right.' },
+      { k: 'gBar', t: 'sw', l: 'Show Google bar', kw: 'gmail images apps profile account' }
     ]],
     ['particles', 'Particles', 'fa-braille', [
       { t: 'h', l: 'Particle network', d: 'Animated dots and lines in the background.' },
@@ -335,7 +343,7 @@
       { k: 'dpBubbles', t: 'sw', l: 'Show bubbles', dep: 'dayBar' }
     ]],
     ['data', 'Data', 'fa-database', [
-      { t: 'h', l: 'Profile', d: 'Your name and weather location.' },
+      { t: 'h', l: 'Profile', d: 'Your name, photo and weather location.' },
       { t: 'acts', l: 'Profile', kw: 'name location', a: 'profile' },
       { t: 'h', l: 'App', d: 'Install Flynn like a normal app. It also opens without internet.' },
       { t: 'acts', l: 'Install app', kw: 'pwa offline desktop phone home screen', a: 'install' },
@@ -460,9 +468,10 @@
     } else if (f.t === 'acts') {
       row = el('<div class="row acts"></div>');
       const sets = {
-        profile: [['Change name', 'fa-user', () => nameEl.click()], ['Change location', 'fa-location-dot', () => $('#weather').click()]],
+        profile: [['Edit profile and photo', 'fa-user-pen', () => editProfile()], ['Change location', 'fa-location-dot', () => $('#weather').click()]],
         backup: [['Export backup', 'fa-download', exportData], ['Import backup', 'fa-upload', importData]],
         reset: [['Reset all settings', 'fa-rotate-left', resetAll, true]],
+        clearHist: [['Clear search history', 'fa-trash', clearHistory, true]],
         install: installEv ? [['Install app', 'fa-download', installApp]] : []
       }[f.a];
       if (f.a === 'install' && !sets.length) {
@@ -523,7 +532,7 @@
     body.scrollTop = top;
   }
   $('#dFind').addEventListener('input', () => { render(); $('#dBody').scrollTop = 0; });
-  const KEYS = ['settings', 'name', 'links', 'loc', 'engine'];
+  const KEYS = ['settings', 'name', 'links', 'loc', 'engine', 'profile', 'history'];
   function exportData() {
     const o = {}; KEYS.forEach(k => { o[k] = store.get(k, null); });
     const a = document.createElement('a');
@@ -700,13 +709,272 @@
   $('#searchForm').onsubmit = e => {
     e.preventDefault();
     const v = $('#q').value.trim(); if (!v) return;
+    hideSug();
     if (/^(https?:\/\/|[\w-]+\.[a-z]{2,}(\/|$))/i.test(v) && !v.includes(' ')) {
       go(/^https?:/i.test(v) ? v : 'https://' + v);
-    } else go(ENGINES[eng].url + encodeURIComponent(v));
+    } else { addHist(v); go(ENGINES[eng].url + encodeURIComponent(v)); }
   };
   const q = () => $('#q').value.trim();
   $('#lens').onclick = () => go('https://lens.google.com/');
   $('#aiMode').onclick = () => go('https://www.google.com/search?udm=50' + (q() ? '&q=' + encodeURIComponent(q()) : ''));
+
+  /* ---------- suggestions and search history ---------- */
+  const sugEl = $('#sug'), qEl = $('#q');
+  const getHist = () => { const h = store.get('history', []); return Array.isArray(h) ? h.filter(x => typeof x === 'string') : []; };
+  function addHist(v) {
+    if (!S.histOn) return;
+    const h = getHist().filter(x => x.toLowerCase() !== v.toLowerCase());
+    h.unshift(v);
+    store.set('history', h.slice(0, Math.max(5, +S.histMax || 20)));
+  }
+  const delHist = v => store.set('history', getHist().filter(x => x !== v));
+  async function clearHistory() {
+    if (!getHist().length) { toast('Search history is already empty', 'fa-circle-info'); return; }
+    const ok = await confirmDialog({
+      icon: 'fa-trash', title: 'Clear search history?',
+      desc: 'All saved searches on this device will be removed. This cannot be undone.', ok: 'Clear history', danger: true
+    });
+    if (!ok) return;
+    store.set('history', []); hideSug(); toast('Search history cleared', 'fa-trash');
+  }
+
+  /* online suggestions: Google first, DuckDuckGo as backup. Failures are silent. */
+  let jsonpId = 0;
+  function jsonp(url, param, ms) {
+    return new Promise((resolve, reject) => {
+      const cb = '__flynnSug' + (++jsonpId), sc = document.createElement('script');
+      const done = () => { clearTimeout(t); window[cb] = () => {}; sc.remove(); }; /* late replies hit a harmless no-op */
+      const t = setTimeout(() => { done(); reject(new Error('timeout')); }, ms || 2500);
+      window[cb] = d => { done(); resolve(d); };
+      sc.onerror = () => { done(); reject(new Error('blocked')); };
+      sc.src = url + (url.includes('?') ? '&' : '?') + param + '=' + cb;
+      document.head.appendChild(sc);
+    });
+  }
+  const lang = () => (navigator.language || 'en').split('-')[0];
+  async function sugGoogle(v) {
+    const d = await jsonp('https://suggestqueries.google.com/complete/search?client=youtube&hl=' + encodeURIComponent(lang()) +
+      (eng === 'YouTube' ? '&ds=yt' : '') + '&q=' + encodeURIComponent(v), 'jsonp');
+    return ((d && d[1]) || []).map(x => Array.isArray(x) ? x[0] : x);
+  }
+  async function sugDDG(v) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 2500);
+    try {
+      const r = await fetch('https://duckduckgo.com/ac/?q=' + encodeURIComponent(v), { signal: ctl.signal });
+      const d = await r.json();
+      return Array.isArray(d) ? (Array.isArray(d[1]) ? d[1] : d.map(x => x && x.phrase)) : [];
+    } finally { clearTimeout(t); }
+  }
+  const sugCache = new Map();
+  async function suggest(v) {
+    const key = eng + '|' + v.toLowerCase();
+    if (sugCache.has(key)) return sugCache.get(key);
+    for (const fn of eng === 'DuckDuckGo' ? [sugDDG, sugGoogle] : [sugGoogle, sugDDG]) {
+      try {
+        const r = (await fn(v)).filter(x => typeof x === 'string' && x.trim());
+        if (r.length) { if (sugCache.size > 100) sugCache.clear(); sugCache.set(key, r); return r; }
+      } catch (e) {}
+    }
+    return [];
+  }
+
+  let sugItems = [], sugSel = -1, typed = '', sugSeq = 0, sugTimer = 0;
+  function hideSug() {
+    sugEl.hidden = true; sugEl.innerHTML = ''; sugItems = []; sugSel = -1;
+    qEl.setAttribute('aria-expanded', 'false'); qEl.removeAttribute('aria-activedescendant');
+  }
+  function showSug(list) {
+    sugItems = list; sugSel = -1; sugEl.innerHTML = '';
+    if (!list.length) { hideSug(); return; }
+    const tv = typed.trim().toLowerCase();
+    let lastHist = null;
+    list.forEach((it, i) => {
+      if (it.h && !tv && lastHist === null) { sugEl.appendChild(el('<div class="sug-head">Recent searches</div>')); lastHist = true; }
+      const row = el('<div class="sug-row" role="option" aria-selected="false" id="sg' + i + '"><i class="fa-solid ' + (it.h ? 'fa-clock-rotate-left' : 'fa-magnifying-glass') + '"></i><span class="sug-t"></span>' +
+        (it.h ? '<button type="button" class="sug-x" tabindex="-1" aria-label="Remove from history"><i class="fa-solid fa-xmark"></i></button>' : '') + '</div>');
+      const t = row.querySelector('.sug-t');
+      if (tv && it.t.toLowerCase().startsWith(tv)) {
+        t.appendChild(document.createTextNode(it.t.slice(0, tv.length)));
+        const b = document.createElement('b'); b.textContent = it.t.slice(tv.length); t.appendChild(b);
+      } else t.textContent = it.t;
+      row.onmousedown = e => e.preventDefault();
+      row.onclick = e => {
+        if (e.target.closest('.sug-x')) { delHist(it.t); refreshSug(); return; }
+        qEl.value = it.t; $('#searchForm').requestSubmit();
+      };
+      sugEl.appendChild(row);
+    });
+    sugEl.hidden = false; qEl.setAttribute('aria-expanded', 'true');
+  }
+  async function refreshSug() {
+    const v = qEl.value.trim(), my = ++sugSeq; typed = qEl.value;
+    const lv = v.toLowerCase();
+    const hist = S.histOn ? getHist() : [];
+    const hItems = (v ? hist.filter(x => x.toLowerCase().includes(lv) && x.toLowerCase() !== lv) : hist).slice(0, v ? 4 : 8).map(t => ({ t, h: 1 }));
+    showSug(hItems);
+    if (!v || !S.sug) return;
+    const online = await suggest(v);
+    if (my !== sugSeq || document.activeElement !== qEl) return;
+    const seen = new Set(hItems.map(x => x.t.toLowerCase()));
+    const extra = online.filter(t => !seen.has(t.toLowerCase())).slice(0, Math.max(0, 8 - hItems.length)).map(t => ({ t }));
+    showSug(hItems.concat(extra));
+  }
+  function moveSel(dir) {
+    const n = sugItems.length; if (!n) return;
+    sugSel = ((sugSel + 1 + dir + (n + 1)) % (n + 1)) - 1;
+    sugEl.querySelectorAll('.sug-row').forEach((r, i) => { const on = i === sugSel; r.classList.toggle('sel', on); r.setAttribute('aria-selected', String(on)); if (on) r.scrollIntoView({ block: 'nearest' }); });
+    qEl.value = sugSel < 0 ? typed : sugItems[sugSel].t;
+    if (sugSel < 0) qEl.removeAttribute('aria-activedescendant'); else qEl.setAttribute('aria-activedescendant', 'sg' + sugSel);
+  }
+  qEl.addEventListener('input', () => { clearTimeout(sugTimer); sugTimer = setTimeout(refreshSug, qEl.value.trim() ? 130 : 0); });
+  let sugReady = false; setTimeout(() => { sugReady = true; }, 600); /* no pop-up on the automatic focus at page load */
+  qEl.addEventListener('focus', () => { if (sugReady) refreshSug(); });
+  qEl.addEventListener('click', () => { if (sugEl.hidden) refreshSug(); });
+  qEl.addEventListener('blur', hideSug);
+  sugEl.addEventListener('mousedown', e => e.preventDefault()); /* keep focus when using the list scrollbar */
+  qEl.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !sugEl.hidden) { e.stopPropagation(); qEl.value = typed; hideSug(); }
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (sugEl.hidden) refreshSug(); else moveSel(e.key === 'ArrowDown' ? 1 : -1);
+    }
+  });
+
+  /* ---------- Google bar: Gmail, Images, apps, profile ---------- */
+  const GAPPS = [
+    ['Account', 'https://myaccount.google.com'], ['Search', 'https://www.google.com'], ['Maps', 'https://maps.google.com'],
+    ['YouTube', 'https://www.youtube.com'], ['Gmail', 'https://mail.google.com'], ['Drive', 'https://drive.google.com'],
+    ['Calendar', 'https://calendar.google.com'], ['Meet', 'https://meet.google.com'], ['Photos', 'https://photos.google.com'],
+    ['Docs', 'https://docs.google.com/document/'], ['Sheets', 'https://docs.google.com/spreadsheets/'], ['Slides', 'https://docs.google.com/presentation/'],
+    ['Translate', 'https://translate.google.com'], ['News', 'https://news.google.com'], ['Keep', 'https://keep.google.com'],
+    ['Contacts', 'https://contacts.google.com'], ['Gemini', 'https://gemini.google.com'], ['Play', 'https://play.google.com']
+  ];
+  const appsPop = $('#appsPop'), acctPop = $('#acctPop'), gApps = $('#gApps'), gProf = $('#gProfile');
+  GAPPS.forEach(([n, u]) => {
+    const a = el('<a class="g-app" role="menuitem"><img alt="" loading="lazy"><span></span></a>');
+    a.href = u; a.querySelector('span').textContent = n;
+    a.querySelector('img').src = 'https://www.google.com/s2/favicons?domain_url=' + encodeURIComponent(u) + '&sz=64';
+    a.addEventListener('click', () => closePops());
+    appsPop.appendChild(a);
+  });
+  function applyGTargets() {
+    document.querySelectorAll('#gbar a, #acctPop a').forEach(a => { a.target = S.newTab ? '_blank' : '_self'; a.rel = 'noopener'; });
+  }
+  applyGTargets();
+
+  const getProfile = () => { const p = store.get('profile', {}); return { photo: (p && p.photo) || '', email: (p && p.email) || '' }; };
+  function avatarInto(node) {
+    const p = getProfile(), name = store.get('name', 'friend');
+    node.innerHTML = '';
+    if (p.photo) { const i = document.createElement('img'); i.alt = ''; i.referrerPolicy = 'no-referrer'; i.src = p.photo; i.onerror = () => { node.textContent = (name[0] || 'F').toUpperCase(); }; node.appendChild(i); }
+    else node.textContent = (name[0] || 'F').toUpperCase();
+  }
+  function drawAvatar() { avatarInto(gProf); gProf.title = 'Google Account: ' + store.get('name', 'friend'); }
+  drawAvatar();
+
+  function closePops(except) {
+    [[gApps, appsPop], [gProf, acctPop]].forEach(([b, p]) => { if (p !== except) { p.hidden = true; b.setAttribute('aria-expanded', 'false'); } });
+  }
+  function togglePop(b, p, build) {
+    const open = p.hidden; closePops(open ? p : null);
+    if (open) { if (build) build(); p.hidden = false; b.setAttribute('aria-expanded', 'true'); }
+    else { p.hidden = true; b.setAttribute('aria-expanded', 'false'); }
+  }
+  function buildAcct() {
+    const p = getProfile(), name = store.get('name', 'friend');
+    acctPop.innerHTML = '';
+    const c = el('<div class="ac"><div class="ac-av"></div><div class="ac-name"></div><div class="ac-mail"></div>' +
+      '<a class="ac-btn" href="https://myaccount.google.com">Manage your Google Account</a>' +
+      '<div class="ac-row"><button type="button" id="acEdit"><i class="fa-solid fa-user-pen"></i>Edit profile</button>' +
+      '<a href="https://accounts.google.com/AccountChooser"><i class="fa-solid fa-repeat"></i>Switch account</a></div>' +
+      '<div class="ac-note">Your photo and email are stored on this device only.</div></div>');
+    avatarInto(c.querySelector('.ac-av'));
+    c.querySelector('.ac-name').textContent = name;
+    if (p.email) c.querySelector('.ac-mail').textContent = p.email; else c.querySelector('.ac-mail').remove();
+    c.querySelector('#acEdit').onclick = () => { closePops(); editProfile(); };
+    acctPop.appendChild(c); applyGTargets();
+  }
+  gApps.onclick = () => togglePop(gApps, appsPop);
+  gProf.onclick = () => togglePop(gProf, acctPop, buildAcct);
+  document.addEventListener('mousedown', e => { if (!e.target.closest('.g-wrap')) closePops(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && (!appsPop.hidden || !acctPop.hidden)) { const b = !appsPop.hidden ? gApps : gProf; closePops(); b.focus(); }
+  });
+
+  /* resize an uploaded image to a small square so it fits in localStorage */
+  function photoFromFile(file) {
+    return new Promise((resolve, reject) => {
+      if (!/^image\//.test(file.type)) return reject(new Error('Please choose an image file.'));
+      if (file.size > 12 * 1024 * 1024) return reject(new Error('That image is too large (max 12 MB).'));
+      const r = new FileReader();
+      r.onerror = () => reject(new Error('Could not read that file.'));
+      r.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('That image could not be opened.'));
+        img.onload = () => {
+          const S2 = 256, c = document.createElement('canvas'); c.width = c.height = S2;
+          const m = Math.min(img.width, img.height), sx = (img.width - m) / 2, sy = (img.height - m) / 2;
+          c.getContext('2d').drawImage(img, sx, sy, m, m, 0, 0, S2, S2);
+          resolve(c.toDataURL('image/jpeg', 0.85));
+        };
+        img.src = r.result;
+      };
+      r.readAsDataURL(file);
+    });
+  }
+  async function editProfile() {
+    const cur = getProfile(); let photo = cur.photo;
+    const r = await dialog({
+      icon: 'fa-user-pen', title: 'Edit profile',
+      desc: 'A web page cannot read your Google photo automatically, so add it here once. It stays on this device only.',
+      build(body, close) {
+        const form = el('<form class="m-form" novalidate>' +
+          '<div class="pf-top"><div class="pf-av"></div><div class="pf-btns">' +
+          '<button type="button" class="m-btn ghost" id="pfUp"><i class="fa-solid fa-upload"></i>Upload photo</button>' +
+          '<button type="button" class="m-btn ghost" id="pfRm"><i class="fa-solid fa-trash"></i>Remove photo</button>' +
+          '<input type="file" id="pfFile" accept="image/*" hidden></div></div>' +
+          '<small class="m-err" id="pfPhotoErr" role="alert"></small>' +
+          '<div class="m-field"><label for="pfName">Name</label><div class="m-input"><i class="fa-solid fa-user"></i><input id="pfName" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="e.g. Flynn"></div><small class="m-err" role="alert"></small></div>' +
+          '<div class="m-field"><label for="pfMail">Email <span>Optional</span></label><div class="m-input"><i class="fa-solid fa-envelope"></i><input id="pfMail" type="text" inputmode="email" maxlength="80" autocomplete="off" spellcheck="false" placeholder="you@gmail.com"></div><small class="m-hint">Only shown in the account card on this page.</small><small class="m-err" role="alert"></small></div>' +
+          '<div class="m-foot"><button type="button" class="m-btn ghost" id="pfCancel">Cancel</button><button type="submit" class="m-btn primary">Save profile</button></div></form>');
+        const av = form.querySelector('.pf-av'), nameI = form.querySelector('#pfName'), mailI = form.querySelector('#pfMail');
+        nameI.value = store.get('name', 'friend'); mailI.value = cur.email;
+        const paint = () => {
+          av.innerHTML = '';
+          if (photo) { const i = document.createElement('img'); i.alt = ''; i.src = photo; av.appendChild(i); }
+          else av.textContent = ((nameI.value.trim() || 'F')[0]).toUpperCase();
+          form.querySelector('#pfRm').style.display = photo ? '' : 'none';
+        };
+        paint(); nameI.addEventListener('input', () => { if (!photo) paint(); });
+        const file = form.querySelector('#pfFile'), perr = form.querySelector('#pfPhotoErr');
+        form.querySelector('#pfUp').onclick = () => file.click();
+        form.querySelector('#pfRm').onclick = () => { photo = ''; perr.textContent = ''; paint(); };
+        file.onchange = async () => {
+          perr.textContent = '';
+          if (!file.files[0]) return;
+          try { photo = await photoFromFile(file.files[0]); paint(); } catch (e) { perr.textContent = e.message; }
+          file.value = '';
+        };
+        form.querySelector('#pfCancel').onclick = () => close(null);
+        form.addEventListener('submit', ev => {
+          ev.preventDefault();
+          const fields = form.querySelectorAll('.m-field');
+          const n = nameI.value.trim(), m = mailI.value.trim();
+          const nErr = n ? '' : 'Please enter a name.';
+          const mErr = m && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m) ? 'Enter a valid email address.' : '';
+          [[fields[0], nErr], [fields[1], mErr]].forEach(([f, msg]) => { f.classList.toggle('bad', !!msg); f.querySelector('.m-err').textContent = msg; });
+          if (nErr) { nameI.focus(); return; } if (mErr) { mailI.focus(); return; }
+          close({ name: n, email: m });
+        });
+        body.appendChild(form);
+      }
+    });
+    if (!r) return;
+    store.set('name', r.name); letters(nameEl, r.name, 0);
+    store.set('profile', { photo, email: r.email });
+    drawAvatar(); toast('Profile updated', 'fa-user-pen');
+  }
+
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   $('#mic').onclick = () => {
     if (!SR) return toast('Voice search is not supported in this browser', 'fa-microphone-slash');

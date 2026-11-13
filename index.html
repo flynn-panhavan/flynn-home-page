@@ -23,6 +23,19 @@
 
 <main class="page">
 
+  <nav class="gbar rise d1" id="gbar" aria-label="Google">
+    <a class="g-link" id="gMail" href="https://mail.google.com">Gmail</a>
+    <a class="g-link" id="gImg" href="https://www.google.com/imghp">Images</a>
+    <div class="g-wrap">
+      <button type="button" id="gApps" class="g-ico" aria-haspopup="true" aria-expanded="false" aria-controls="appsPop" aria-label="Google apps" title="Google apps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM6 14c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM6 20c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg></button>
+      <div class="g-pop apps" id="appsPop" role="menu" aria-label="Google apps" hidden></div>
+    </div>
+    <div class="g-wrap">
+      <button type="button" id="gProfile" class="g-avatar" aria-haspopup="true" aria-expanded="false" aria-controls="acctPop" aria-label="Google Account" title="Google Account"></button>
+      <div class="g-pop acct" id="acctPop" aria-label="Google Account" hidden></div>
+    </div>
+  </nav>
+
   <header class="top">
     <div class="rise d1">
       <div class="greet">
@@ -60,12 +73,13 @@
     <div class="search">
       <form class="search-box" id="searchForm">
         <span class="s-ico" id="sIco" aria-hidden="true"></span>
-        <input id="q" type="text" placeholder="Ask Google or type a URL" autocomplete="off" autofocus>
+        <input id="q" type="text" placeholder="Ask Google or type a URL" autocomplete="off" spellcheck="false" autofocus role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list" aria-haspopup="listbox">
         <div class="s-tools">
           <button class="s-act" id="mic" type="button" title="Search by voice"><i class="fa-solid fa-microphone"></i></button>
           <button class="s-act" id="lens" type="button" title="Search with Google Lens"><i class="fa-solid fa-camera"></i></button>
           <button class="ai" id="aiMode" type="button" title="Google AI Mode"><i class="fa-solid fa-wand-magic-sparkles"></i><span>AI Mode</span></button>
         </div>
+        <div class="sug" id="sug" role="listbox" aria-label="Search suggestions" hidden></div>
       </form>
       <div class="engines" id="engines"></div>
     </div>
