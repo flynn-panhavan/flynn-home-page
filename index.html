@@ -83,10 +83,15 @@
 
 <button id="gear" class="gear" aria-label="Open settings" title="Settings (,)"><i class="fa-solid fa-gear"></i></button>
 <div id="scrim"></div>
-<aside id="drawer" aria-label="Settings">
-  <div class="d-head"><b><i class="fa-solid fa-sliders"></i> Settings</b><button id="dClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
-  <nav id="dTabs" class="d-tabs"></nav>
+<aside id="drawer" role="dialog" aria-label="Settings" aria-hidden="true">
+  <div class="d-head">
+    <div class="d-ttl"><b><i class="fa-solid fa-sliders"></i> Settings</b><span>Personalize your home page</span></div>
+    <button id="dClose" type="button" aria-label="Close settings"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="d-find"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input id="dFind" type="search" placeholder="Search settings" autocomplete="off" spellcheck="false" aria-label="Search settings"></div>
+  <nav id="dTabs" class="d-tabs" role="tablist" aria-label="Settings sections"></nav>
   <div id="dBody"></div>
+  <div class="d-foot"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Changes are saved automatically</div>
 </aside>
 <div id="toasts"></div>
 <script src="script.js"></script>

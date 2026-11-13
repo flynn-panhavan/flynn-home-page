@@ -197,9 +197,11 @@
 
 
   /* ---------- settings ---------- */
-  const DEF = { theme: 'aurora', mode: 'auto', custom: ['#4f46e5', '#06b6d4', '#ec4899', '#0b1020'], tab: 'theme', blobs: true, particles: true, pCount: 80, pSize: 100, pSpeed: 100, pLink: 100, pLines: true, pMouse: true, blur: 16, scale: 110, clock: 100, hr24: false, seconds: false, unit: 'C', weather: true, dayBar: true, engines: true, newTab: false, sTools: true,
+  const DEF = { theme: 'aurora', mode: 'auto', custom: ['#4f46e5', '#06b6d4', '#ec4899', '#0b1020'], tab: 'theme', blobs: true, particles: true, pCount: 80, pSize: 100, pSpeed: 100, pLink: 100, pLines: true, pMouse: true, blur: 16, scale: 110, clock: 100, hr24: false, seconds: false, unit: 'C', weather: true, dayBar: true, engines: true, newTab: false, sNew: false, sTools: true,
     dpH: 116, dpW: 100, dpR: 16, dpPct: 100, dpDim: 50, dpTxt: true, dpPctOn: true, dpFace: true, dpClouds: true, dpBubbles: true, dpGrad: 'aqua' };
-  const S = Object.assign({}, DEF, store.get('settings', {}));
+  const saved = store.get('settings', {});
+  const S = Object.assign({}, DEF, saved);
+  if (saved.sNew === undefined && saved.newTab) S.sNew = true; /* keep old behavior for existing users */
   const THEMES = {
     aurora:   { n: 'Aurora',   d: ['#1b1464', '#0f766e', '#7c3aed', '#0b1020'], l: ['#c7d2fe', '#a7f3d0', '#e9d5ff', '#fdf2f8'] },
     sunset:   { n: 'Sunset',   d: ['#7c1d3a', '#c2410c', '#6d28d9', '#1a0b1f'], l: ['#fecaca', '#fed7aa', '#fbcfe8', '#fff7ed'] },
@@ -246,125 +248,261 @@
   apply();
   if (dark.addEventListener) dark.addEventListener('change', apply);
   const commit = () => { store.set('settings', S); apply(); syncP(); tick(); drawLinks(); drawEngines(); renderTemp(); };
-  const openDrawer = on => { document.body.classList.toggle('open', on); if (on) render(); };
+  const drawerEl = $('#drawer');
+  drawerEl.inert = true;
+  const openDrawer = on => {
+    document.body.classList.toggle('open', on);
+    drawerEl.inert = !on; drawerEl.setAttribute('aria-hidden', String(!on));
+    if (on) render();
+    else { if (drawerEl.contains(document.activeElement)) $('#gear').focus({ preventScroll: true }); $('#dFind').value = ''; }
+  };
   $('#gear').onclick = () => openDrawer(true);
   $('#scrim').onclick = $('#dClose').onclick = () => openDrawer(false);
 
   const SCHEMA = [
     ['theme', 'Theme', 'fa-palette', [
-      { t: 'themes' },
-      { k: 'mode', t: 'seg', l: 'Mode', o: [['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']] },
-      { t: 'colors', l: 'Custom colors', h: 'Four background colors. Pick any to switch to Custom.' },
-      { k: 'blobs', t: 'sw', l: 'Animated color glow' },
-      { k: 'blur', t: 'rng', l: 'Glass blur', min: 0, max: 32, u: 'px' }
+      { t: 'h', l: 'Color theme', d: 'Pick a background palette for your home page.' },
+      { t: 'themes', l: 'Color theme', kw: 'palette background colour' },
+      { k: 'mode', t: 'seg', l: 'Appearance', d: 'Auto follows your device light or dark setting.', o: [['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']] },
+      { t: 'h', l: 'Custom colors', d: 'Create your own four-color background.' },
+      { t: 'colors', l: 'Background colors', h: 'Pick any color to switch to the Custom theme.' },
+      { t: 'h', l: 'Effects' },
+      { k: 'blobs', t: 'sw', l: 'Animated color glow', d: 'Soft moving color behind the page.' },
+      { k: 'blur', t: 'rng', l: 'Glass blur', d: 'Frosted effect on cards and panels.', min: 0, max: 32, u: 'px' }
     ]],
-    ['particles', 'Particles', 'fa-circle-nodes', [
-      { k: 'particles', t: 'sw', l: 'Particle network' },
-      { k: 'pCount', t: 'rng', l: 'Amount', min: 10, max: 250, step: 5, u: '' },
-      { k: 'pSize', t: 'rng', l: 'Dot size', min: 40, max: 400, step: 10, u: '%' },
-      { k: 'pSpeed', t: 'rng', l: 'Speed', min: 0, max: 400, step: 10, u: '%' },
-      { k: 'pLines', t: 'sw', l: 'Connecting lines' },
-      { k: 'pLink', t: 'rng', l: 'Line distance', min: 40, max: 250, step: 10, u: 'px' },
-      { k: 'pMouse', t: 'sw', l: 'Dots move away from cursor' }
+    ['search', 'Search', 'fa-magnifying-glass', [
+      { t: 'h', l: 'Search bar', d: 'Choose what appears around the search box.' },
+      { k: 'engines', t: 'sw', l: 'Show search engine chips', d: 'Turn off to hide the engine picker below the search bar.', kw: 'hide engines google youtube github duckduckgo maps' },
+      { k: 'sTools', t: 'sw', l: 'Voice, Lens & AI Mode buttons', d: 'Show these shortcut buttons inside the search bar.', kw: 'microphone camera' },
+      { t: 'h', l: 'Default engine', d: 'Used when you press Enter in the search bar.' },
+      { t: 'engsel', l: 'Default search engine', kw: 'google youtube github duckduckgo maps' },
+      { t: 'h', l: 'Results', d: 'Where a search opens after you press Enter.' },
+      { k: 'sNew', t: 'seg', l: 'Open search results in', d: 'Also applies to typed URLs, Google Lens and AI Mode.', kw: 'tab blank window same new', o: [[false, 'Same tab'], [true, 'New tab']] }
+    ]],
+    ['display', 'Display', 'fa-eye', [
+      { t: 'h', l: 'Clock', d: 'Time and date format.' },
+      { k: 'hr24', t: 'sw', l: '24-hour clock' },
+      { k: 'seconds', t: 'sw', l: 'Show seconds' },
+      { t: 'h', l: 'Weather' },
+      { k: 'weather', t: 'sw', l: 'Weather card', d: 'Show current conditions for your chosen location.' },
+      { k: 'unit', t: 'seg', l: 'Temperature unit', dep: 'weather', o: [['C', '°C'], ['F', '°F']] },
+      { t: 'h', l: 'Shortcuts' },
+      { k: 'newTab', t: 'sw', l: 'Open shortcuts in a new tab', d: 'Applies to the pinned website shortcuts only.', kw: 'links blank window' }
+    ]],
+    ['particles', 'Particles', 'fa-braille', [
+      { t: 'h', l: 'Particle network', d: 'Animated dots and lines in the background.' },
+      { k: 'particles', t: 'sw', l: 'Enable particles' },
+      { k: 'pCount', t: 'rng', l: 'Amount', dep: 'particles', min: 10, max: 250, step: 5, u: '' },
+      { k: 'pSize', t: 'rng', l: 'Dot size', dep: 'particles', min: 40, max: 400, step: 10, u: '%' },
+      { k: 'pSpeed', t: 'rng', l: 'Speed', dep: 'particles', min: 0, max: 400, step: 10, u: '%' },
+      { t: 'h', l: 'Lines and interaction' },
+      { k: 'pLines', t: 'sw', l: 'Connecting lines', dep: 'particles' },
+      { k: 'pLink', t: 'rng', l: 'Line distance', dep: 'particles', min: 40, max: 250, step: 10, u: 'px' },
+      { k: 'pMouse', t: 'sw', l: 'Dots move away from cursor', dep: 'particles' }
     ]],
     ['size', 'Size', 'fa-up-right-and-down-left-from-center', [
+      { t: 'h', l: 'Scale', d: 'Make everything bigger or smaller.' },
       { k: 'scale', t: 'rng', l: 'Interface size', min: 80, max: 160, step: 5, u: '%' },
       { k: 'clock', t: 'rng', l: 'Clock size', min: 50, max: 160, step: 5, u: '%' }
     ]],
     ['day', 'Day bar', 'fa-bars-progress', [
+      { t: 'h', l: 'Day progress card' },
       { k: 'dayBar', t: 'sw', l: 'Show day progress bar' },
-      { t: 'dpg', l: 'Color' },
-      { k: 'dpH', t: 'rng', l: 'Height', min: 56, max: 220, step: 2, u: 'px' },
-      { k: 'dpW', t: 'rng', l: 'Width', min: 30, max: 100, step: 5, u: '%' },
-      { k: 'dpR', t: 'rng', l: 'Corner roundness', min: 0, max: 60, step: 1, u: 'px' },
-      { k: 'dpPct', t: 'rng', l: 'Percentage size', min: 50, max: 160, step: 5, u: '%' },
-      { k: 'dpDim', t: 'rng', l: 'Dim passed time', min: 0, max: 90, step: 5, u: '%' },
-      { k: 'dpPctOn', t: 'sw', l: 'Show percentage' },
-      { k: 'dpTxt', t: 'sw', l: 'Show "Today" and time left' },
-      { k: 'dpFace', t: 'sw', l: 'Show face' },
-      { k: 'dpClouds', t: 'sw', l: 'Show clouds' },
-      { k: 'dpBubbles', t: 'sw', l: 'Show bubbles' }
+      { t: 'dpg', l: 'Color', dep: 'dayBar' },
+      { t: 'h', l: 'Shape' },
+      { k: 'dpH', t: 'rng', l: 'Height', dep: 'dayBar', min: 56, max: 220, step: 2, u: 'px' },
+      { k: 'dpW', t: 'rng', l: 'Width', dep: 'dayBar', min: 30, max: 100, step: 5, u: '%' },
+      { k: 'dpR', t: 'rng', l: 'Corner roundness', dep: 'dayBar', min: 0, max: 60, step: 1, u: 'px' },
+      { k: 'dpPct', t: 'rng', l: 'Percentage size', dep: 'dayBar', min: 50, max: 160, step: 5, u: '%' },
+      { k: 'dpDim', t: 'rng', l: 'Dim passed time', dep: 'dayBar', min: 0, max: 90, step: 5, u: '%' },
+      { t: 'h', l: 'Details' },
+      { k: 'dpPctOn', t: 'sw', l: 'Show percentage', dep: 'dayBar' },
+      { k: 'dpTxt', t: 'sw', l: 'Show “Today” and time left', dep: 'dayBar' },
+      { k: 'dpFace', t: 'sw', l: 'Show face', dep: 'dayBar' },
+      { k: 'dpClouds', t: 'sw', l: 'Show clouds', dep: 'dayBar' },
+      { k: 'dpBubbles', t: 'sw', l: 'Show bubbles', dep: 'dayBar' }
     ]],
-    ['display', 'Display', 'fa-eye', [
-      { k: 'hr24', t: 'sw', l: '24-hour clock' },
-      { k: 'seconds', t: 'sw', l: 'Show seconds' },
-      { k: 'unit', t: 'seg', l: 'Temperature', o: [['C', '°C'], ['F', '°F']] },
-      { k: 'weather', t: 'sw', l: 'Weather card' },
-      { k: 'engines', t: 'sw', l: 'Search engine chips' },
-      { k: 'sTools', t: 'sw', l: 'Voice, Lens & AI Mode buttons' },
-      { k: 'newTab', t: 'sw', l: 'Open links in a new tab' }
-    ]],
-    ['data', 'Data', 'fa-database', [{ t: 'acts' }]]
+    ['data', 'Data', 'fa-database', [
+      { t: 'h', l: 'Profile', d: 'Your name and weather location.' },
+      { t: 'acts', l: 'Profile', kw: 'name location', a: 'profile' },
+      { t: 'h', l: 'Backup', d: 'Everything is stored in this browser only.' },
+      { t: 'acts', l: 'Backup and restore', kw: 'export import json', a: 'backup' },
+      { t: 'h', l: 'Reset' },
+      { t: 'acts', l: 'Reset all settings', kw: 'default restore', a: 'reset' }
+    ]]
   ];
   function el(html) { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; }
+  const clone = v => JSON.parse(JSON.stringify(v));
+
+  /* confirmation dialog built on the shared dialog() */
+  function confirmDialog(o) {
+    return dialog({
+      icon: o.icon || 'fa-triangle-exclamation', title: o.title, desc: o.desc,
+      build(body, close) {
+        const foot = el('<div class="m-foot"><button type="button" class="m-btn ghost">Cancel</button><button type="button" class="m-btn primary"></button></div>');
+        const ok = foot.querySelector('.primary');
+        ok.textContent = o.ok || 'Confirm';
+        if (o.danger) ok.classList.add('danger');
+        foot.querySelector('.ghost').onclick = () => close(null);
+        ok.onclick = () => close(true);
+        body.appendChild(foot);
+      }
+    });
+  }
+
+  /* keys that a group of fields controls (used by per-section reset) */
+  function keysOf(fields) {
+    const k = [];
+    fields.forEach(f => {
+      if (f.k) k.push(f.k);
+      else if (f.t === 'themes') k.push('theme');
+      else if (f.t === 'colors') k.push('custom');
+      else if (f.t === 'dpg') k.push('dpGrad');
+    });
+    return k;
+  }
+  async function resetSection(id) {
+    const sc = SCHEMA.find(x => x[0] === id); if (!sc) return;
+    const ok = await confirmDialog({
+      icon: 'fa-rotate-left', title: 'Reset ' + sc[1] + ' settings?',
+      desc: 'Only the options in this section return to their defaults. Your shortcuts, name and location are not affected.',
+      ok: 'Reset section', danger: true
+    });
+    if (!ok) return;
+    keysOf(sc[3]).forEach(k => { S[k] = clone(DEF[k]); });
+    if (sc[3].some(f => f.t === 'engsel')) { eng = 'Google'; store.set('engine', eng); }
+    commit(); render(); toast(sc[1] + ' settings reset', 'fa-rotate-left');
+  }
+  async function resetAll() {
+    const ok = await confirmDialog({
+      icon: 'fa-triangle-exclamation', title: 'Reset all settings?',
+      desc: 'Every appearance and behavior option returns to its default. Your shortcuts, name and location are kept.',
+      ok: 'Reset everything', danger: true
+    });
+    if (!ok) return;
+    Object.assign(S, clone(DEF)); eng = 'Google'; store.set('engine', eng);
+    commit(); render(); toast('All settings reset', 'fa-rotate-left');
+  }
+
+  function refreshDeps() {
+    document.querySelectorAll('#dBody [data-dep]').forEach(r => {
+      const off = !S[r.dataset.dep];
+      r.classList.toggle('dis', off);
+      r.querySelectorAll('input,button').forEach(x => { x.disabled = off; });
+    });
+  }
+
+  function buildRow(f, d) {
+    let row;
+    const note = f.d ? '<small class="note">' + f.d + '</small>' : '';
+    if (f.t === 'themes') {
+      row = el('<div class="row"><div class="sw-grid"></div></div>');
+      Object.keys(THEMES).concat('custom').forEach(k => {
+        const c = palette(k, d), b = el('<button type="button" aria-pressed="' + (S.theme === k) + '" class="' + (S.theme === k ? 'on' : '') + '"><span></span>' + (k === 'custom' ? 'Custom' : THEMES[k].n) + '</button>');
+        b.firstChild.style.background = 'linear-gradient(135deg,' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+        b.onclick = () => { S.theme = k; commit(); render(); };
+        row.firstChild.appendChild(b);
+      });
+    } else if (f.t === 'dpg') {
+      row = el('<div class="row"><div class="lab">' + f.l + '</div><div class="sw-grid"></div></div>');
+      Object.keys(DPG).forEach(k => {
+        const c = DPG[k].c, b = el('<button type="button" aria-pressed="' + (S.dpGrad === k) + '" class="' + (S.dpGrad === k ? 'on' : '') + '"><span></span>' + DPG[k].n + '</button>');
+        b.firstChild.style.background = 'linear-gradient(135deg,' + c[0] + ',' + c[1] + ',' + c[2] + ',' + c[3] + ')';
+        b.onclick = () => { S.dpGrad = k; commit(); render(); };
+        row.lastChild.appendChild(b);
+      });
+    } else if (f.t === 'engsel') {
+      row = el('<div class="row"><div class="lab">' + f.l + '</div><div class="eng-grid"></div></div>');
+      Object.keys(ENGINES).forEach(k => {
+        const b = el('<button type="button" class="eng-opt' + (eng === k ? ' on' : '') + '" aria-pressed="' + (eng === k) + '"><img alt="" src="' + favicon(ENGINES[k].host, 32) + '"><span></span><i class="fa-solid fa-check"></i></button>');
+        b.querySelector('span').textContent = k;
+        b.onclick = () => { eng = k; store.set('engine', k); drawEngines(); render(); };
+        row.lastChild.appendChild(b);
+      });
+    } else if (f.t === 'seg') {
+      row = el('<div class="row"><div class="lab">' + f.l + '</div><div class="seg"></div>' + note + '</div>');
+      f.o.forEach(([v, n]) => {
+        const b = el('<button type="button" aria-pressed="' + (S[f.k] === v) + '" class="' + (S[f.k] === v ? 'on' : '') + '">' + n + '</button>');
+        b.onclick = () => { S[f.k] = v; commit(); render(); };
+        row.querySelector('.seg').appendChild(b);
+      });
+    } else if (f.t === 'sw') {
+      row = el('<div class="row"><label class="sw"><span class="sw-t"><b>' + f.l + '</b>' + note + '</span><input type="checkbox"><i></i></label></div>');
+      const i = row.querySelector('input'); i.checked = !!S[f.k];
+      i.onchange = () => { S[f.k] = i.checked; commit(); refreshDeps(); };
+    } else if (f.t === 'rng') {
+      row = el('<div class="row"><div class="lab"><span>' + f.l + '</span><em></em></div><input type="range" aria-label="' + f.l + '">' + note + '</div>');
+      const i = row.querySelector('input'), o = row.querySelector('em');
+      i.min = f.min; i.max = f.max; i.step = f.step || 1; i.value = S[f.k]; o.textContent = S[f.k] + f.u;
+      i.oninput = () => { S[f.k] = +i.value; o.textContent = i.value + f.u; commit(); };
+    } else if (f.t === 'colors') {
+      row = el('<div class="row"><div class="lab">' + f.l + '</div><div class="cols"></div><small>' + f.h + '</small></div>');
+      S.custom.forEach((v, n) => {
+        const i = el('<input type="color" aria-label="Color ' + (n + 1) + '">'); i.value = v;
+        i.oninput = () => { S.custom[n] = i.value; S.theme = 'custom'; commit(); };
+        i.onchange = render;
+        row.querySelector('.cols').appendChild(i);
+      });
+    } else if (f.t === 'acts') {
+      row = el('<div class="row acts"></div>');
+      const sets = {
+        profile: [['Change name', 'fa-user', () => nameEl.click()], ['Change location', 'fa-location-dot', () => $('#weather').click()]],
+        backup: [['Export backup', 'fa-download', exportData], ['Import backup', 'fa-upload', importData]],
+        reset: [['Reset all settings', 'fa-rotate-left', resetAll, true]]
+      }[f.a];
+      sets.forEach(([n, ico, fn, danger]) => {
+        const b = el('<button type="button"' + (danger ? ' class="danger"' : '') + '><i class="fa-solid ' + ico + '"></i>' + n + '</button>'); b.onclick = fn; row.appendChild(b);
+      });
+    }
+    if (f.dep) { row.dataset.dep = f.dep; }
+    return row;
+  }
+
   function render() {
-    const body = $('#dBody'); body.innerHTML = '';
-    const d = isDark();
-    const tabs = $('#dTabs'); tabs.innerHTML = '';
+    const body = $('#dBody'), tabs = $('#dTabs'), d = isDark();
+    const term = $('#dFind').value.trim().toLowerCase();
+    const top = body.scrollTop;
+    body.innerHTML = ''; tabs.innerHTML = '';
+    tabs.classList.toggle('hid', !!term);
     if (!SCHEMA.some(x => x[0] === S.tab)) S.tab = 'theme';
     SCHEMA.forEach(([id, title, ico]) => {
-      const t = el('<button class="' + (S.tab === id ? 'on' : '') + '"><i class="fa-solid ' + ico + '"></i><span>' + title + '</span></button>');
+      const t = el('<button type="button" role="tab" aria-selected="' + (S.tab === id) + '" class="' + (S.tab === id ? 'on' : '') + '"><i class="fa-solid ' + ico + '"></i><span>' + title + '</span></button>');
       t.onclick = () => { S.tab = id; store.set('settings', S); render(); body.scrollTop = 0; };
       tabs.appendChild(t);
     });
-    SCHEMA.filter(x => x[0] === S.tab).forEach(([id, title, ico, fields]) => {
-      const sec = el('<div class="sec"></div>');
-      fields.forEach(f => {
-        let row;
-        if (f.t === 'themes') {
-          row = el('<div class="row"><div class="sw-grid"></div></div>');
-          Object.keys(THEMES).concat('custom').forEach(k => {
-            const c = palette(k, d), b = el('<button class="' + (S.theme === k ? 'on' : '') + '"><span></span>' + (k === 'custom' ? 'Custom' : THEMES[k].n) + '</button>');
-            b.firstChild.style.background = 'linear-gradient(135deg,' + c[0] + ',' + c[1] + ',' + c[2] + ')';
-            b.onclick = () => { S.theme = k; commit(); render(); };
-            row.firstChild.appendChild(b);
-          });
-        } else if (f.t === 'dpg') {
-          row = el('<div class="row"><div class="lab">' + f.l + '</div><div class="sw-grid"></div></div>');
-          Object.keys(DPG).forEach(k => {
-            const c = DPG[k].c, b = el('<button class="' + (S.dpGrad === k ? 'on' : '') + '"><span></span>' + DPG[k].n + '</button>');
-            b.firstChild.style.background = 'linear-gradient(135deg,' + c[0] + ',' + c[1] + ',' + c[2] + ',' + c[3] + ')';
-            b.onclick = () => { S.dpGrad = k; commit(); render(); };
-            row.lastChild.appendChild(b);
-          });
-        } else if (f.t === 'seg') {
-          row = el('<div class="row"><div class="lab">' + f.l + '</div><div class="seg"></div></div>');
-          f.o.forEach(([v, n]) => {
-            const b = el('<button class="' + (S[f.k] === v ? 'on' : '') + '">' + n + '</button>');
-            b.onclick = () => { S[f.k] = v; commit(); render(); };
-            row.lastChild.appendChild(b);
-          });
-        } else if (f.t === 'sw') {
-          row = el('<div class="row"><label class="sw"><span>' + f.l + '</span><input type="checkbox"><i></i></label></div>');
-          const i = row.querySelector('input'); i.checked = !!S[f.k];
-          i.onchange = () => { S[f.k] = i.checked; commit(); };
-        } else if (f.t === 'rng') {
-          row = el('<div class="row"><div class="lab"><span>' + f.l + '</span><em></em></div><input type="range"></div>');
-          const i = row.querySelector('input'), o = row.querySelector('em');
-          i.min = f.min; i.max = f.max; i.step = f.step || 1; i.value = S[f.k]; o.textContent = S[f.k] + f.u;
-          i.oninput = () => { S[f.k] = +i.value; o.textContent = i.value + f.u; commit(); };
-        } else if (f.t === 'colors') {
-          row = el('<div class="row"><div class="lab">' + f.l + '</div><div class="cols"></div><small>' + f.h + '</small></div>');
-          S.custom.forEach((v, n) => {
-            const i = el('<input type="color">'); i.value = v;
-            i.oninput = () => { S.custom[n] = i.value; S.theme = 'custom'; commit(); };
-            i.onchange = render;
-            row.querySelector('.cols').appendChild(i);
-          });
-        } else if (f.t === 'acts') {
-          row = el('<div class="row acts"></div>');
-          [['Change name', () => nameEl.click()], ['Change location', () => $('#weather').click()],
-           ['Export backup', exportData], ['Import backup', importData],
-           ['Reset settings', () => { Object.assign(S, JSON.parse(JSON.stringify(DEF))); commit(); render(); toast('Settings reset', 'fa-rotate-left'); }]
-          ].forEach(([n, fn], i, a) => {
-            const b = el('<button' + (i === a.length - 1 ? ' class="danger"' : '') + '>' + n + '</button>'); b.onclick = fn; row.appendChild(b);
-          });
-        }
-        sec.appendChild(row);
+    const heading = (l, d2, ico) => {
+      const h = el('<div class="grp"><h4></h4><p></p></div>');
+      h.querySelector('h4').textContent = l;
+      if (ico) h.querySelector('h4').insertBefore(el('<i class="fa-solid ' + ico + '"></i>'), h.querySelector('h4').firstChild);
+      if (d2) h.querySelector('p').textContent = d2; else h.querySelector('p').remove();
+      return h;
+    };
+    if (term) {
+      let hits = 0;
+      SCHEMA.forEach(([id, title, ico, fields]) => {
+        const m = fields.filter(f => f.t !== 'h' && ((f.l || '') + ' ' + (f.d || '') + ' ' + (f.kw || '') + ' ' + title).toLowerCase().includes(term));
+        if (!m.length) return;
+        hits += m.length;
+        const sec = el('<div class="sec"></div>');
+        sec.appendChild(heading(title, '', ico));
+        m.forEach(f => sec.appendChild(buildRow(f, d)));
+        body.appendChild(sec);
       });
+      if (!hits) body.appendChild(el('<div class="d-empty"><i class="fa-solid fa-magnifying-glass"></i>No settings match “<span></span>”.</div>')).querySelector('span').textContent = term;
+    } else {
+      const sc = SCHEMA.find(x => x[0] === S.tab), sec = el('<div class="sec"></div>');
+      sc[3].forEach(f => sec.appendChild(f.t === 'h' ? heading(f.l, f.d) : buildRow(f, d)));
+      if (keysOf(sc[3]).length) {
+        const r = el('<button type="button" class="d-reset"><i class="fa-solid fa-rotate-left"></i>Reset this section</button>');
+        r.onclick = () => resetSection(sc[0]);
+        sec.appendChild(r);
+      }
       body.appendChild(sec);
-    });
+    }
+    refreshDeps();
+    body.scrollTop = top;
   }
+  $('#dFind').addEventListener('input', () => { render(); $('#dBody').scrollTop = 0; });
   const KEYS = ['settings', 'name', 'links', 'loc', 'engine'];
   function exportData() {
     const o = {}; KEYS.forEach(k => { o[k] = store.get(k, null); });
@@ -533,7 +671,12 @@
     });
   }
   drawEngines();
-  const go = u => S.newTab ? window.open(u, '_blank', 'noopener') : (location.href = u);
+  const go = u => {
+    if (!S.sNew) { location.href = u; return; }
+    const w = window.open(u, '_blank');
+    if (w) { try { w.opener = null; } catch (e) {} }
+    else { toast('Pop-up blocked. Opened in this tab instead', 'fa-window-restore'); location.href = u; }
+  };
   $('#searchForm').onsubmit = e => {
     e.preventDefault();
     const v = $('#q').value.trim(); if (!v) return;

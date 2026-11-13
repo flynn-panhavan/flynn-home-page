@@ -465,3 +465,59 @@ body.m-lock{overflow:hidden}
   .m-foot .m-btn{flex:1}
 }
 @media (prefers-reduced-motion:reduce){.m-ov,.m-card{animation:none}}
+
+/* ================= v7: professional settings drawer ================= */
+.d-head{padding:18px 20px 16px}
+.d-ttl{display:flex;flex-direction:column;gap:2px}
+.d-ttl b{font-size:17px;font-weight:700;letter-spacing:-.2px}
+.d-ttl span{font-size:12.5px;color:var(--muted);margin-left:25px}
+.d-find{display:flex;align-items:center;gap:10px;margin:14px 16px 0;padding:0 14px;background:var(--track);border:1.5px solid transparent;border-radius:12px;transition:border-color .15s,background .15s}
+.d-find i{color:var(--muted2);font-size:13px}
+.d-find input{flex:1;min-width:0;background:none;border:none;outline:none;font:inherit;font-size:14px;color:var(--text);padding:11px 0}
+.d-find input::placeholder{color:var(--muted2)}
+.d-find:focus-within{border-color:var(--focus);background:transparent}
+.d-tabs{padding:12px 16px 10px}
+.d-tabs.hid{display:none}
+.d-find + .d-tabs.hid{border-bottom:none}
+#dBody{padding:4px 20px 24px}
+.grp{margin:22px 0 4px}
+.sec > .grp:first-child{margin-top:14px}
+.grp h4{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);display:flex;align-items:center;gap:8px;font-weight:700;margin:0}
+.grp p{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.45}
+.row{padding:13px 0}
+.row small.note{display:block;color:var(--muted);font-size:12px;line-height:1.45;margin-top:8px}
+.sw-t{display:flex;flex-direction:column;min-width:0;padding-right:16px}
+.sw-t b{font-weight:500;font-size:14px}
+.sw-t small.note{margin-top:3px}
+.row.dis{opacity:.4;pointer-events:none}
+.row.dis .sw,.row.dis input{cursor:not-allowed}
+.eng-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.eng-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--border);background:var(--glass);font-size:13.5px;font-weight:500;color:var(--text);text-align:left;transition:background .15s,border-color .15s}
+.eng-opt img{width:20px;height:20px;border-radius:5px;background:#fff;padding:1px;flex:none}
+.eng-opt span{flex:1;min-width:0}
+.eng-opt i{font-size:12px;opacity:0}
+.eng-opt:hover{background:var(--hover)}
+.eng-opt.on{border-color:var(--focus);background:var(--hover)}
+.eng-opt.on i{opacity:1}
+.acts button{display:flex;align-items:center;justify-content:center;gap:8px}
+.acts button i{font-size:12px;opacity:.8}
+.acts .danger i{opacity:1}
+.d-reset{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:26px;padding:11px;border-radius:12px;border:1px dashed var(--border);font-size:13px;color:var(--muted);transition:.15s}
+.d-reset:hover{background:var(--hover);color:var(--text);border-style:solid}
+.d-empty{text-align:center;color:var(--muted2);font-size:14px;padding:46px 10px}
+.d-empty i{display:block;font-size:22px;margin-bottom:12px}
+.d-foot{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-top:1px solid var(--border);font-size:12px;color:var(--muted2)}
+.d-foot i{color:#22c55e}
+#drawer button:focus-visible,#drawer .sw:has(input:focus-visible) i,.gear:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.m-btn.primary.danger{background:var(--m-danger);color:#fff}
+@media (prefers-reduced-motion:reduce){#drawer{transition:none}}
+.sw{position:relative}
+.sw input{display:block;position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.d-ttl b{display:flex;align-items:center;gap:10px}
+.d-ttl b i{width:20px;margin:0;text-align:center}
+.d-ttl span{margin-left:30px}
+
+/* v7.1: show every settings tab at once (wrap instead of side-scroll) */
+.d-tabs{flex-wrap:wrap;overflow:visible;gap:6px;padding:12px 16px}
+.d-tabs button{padding:8px 13px;font-size:12.5px;gap:6px;border:1px solid var(--border)}
+.d-tabs button.on{border-color:transparent}

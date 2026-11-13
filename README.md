@@ -10,7 +10,8 @@ A fast, customizable browser start page with a live clock, day-progress card, we
 - **Search bar** with Google, YouTube, GitHub, Maps and DuckDuckGo, plus voice search, Google Lens and AI Mode shortcuts. Typing a URL opens it directly.
 - **Shortcuts** with automatic site icons. Add, preview and remove from a validated dialog.
 - **Professional dialogs** for every input: keyboard accessible, focus-trapped, light/dark aware and mobile friendly.
-- **Settings drawer** for themes, light/dark/auto mode, custom colors, particle background, glass blur, interface size, clock size and day-bar styling.
+- **Settings drawer** with a search box, grouped sections and short descriptions: Theme, Search, Display, Particles, Size, Day bar and Data. Options that depend on a switch (for example particle amount) dim when it is off, and every section has its own **Reset this section** button.
+- **Search settings**: hide the search engine chips, hide the Voice / Lens / AI Mode buttons, pick the default engine, and choose whether search results open in the **same tab** or a **new tab**. Shortcuts have their own separate new-tab option under Display.
 - **Backup and restore** of all settings as a JSON file.
 - **Privacy friendly**: everything is stored in your browser's `localStorage`. There is no server, account or tracking.
 
@@ -109,6 +110,7 @@ Chrome does not allow a web page as the new tab by default. Use a "custom new ta
 | Day-bar gradients | `DPG` in `script.js` |
 | Weather locations | `LOCS` in `script.js` (id, English name, Khmer name, type, latitude, longitude) |
 | Default settings | `DEF` in `script.js` |
+| Settings sections and options | `SCHEMA` in `script.js` |
 | Dialog styling | the "professional dialogs" section at the end of `style.css` |
 
 To add a weather location, append an entry to `LOCS`:
